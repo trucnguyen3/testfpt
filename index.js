@@ -5,7 +5,10 @@ const path = require("path");
 
 const app = express();
 const PORT = 3005;
-const MIXPANEL_TOKEN = 'd7ecd6759520106d4adbba6c5a3b1d61';
+const projectId = '3811784';
+const MIXPANEL_IMPORT_API_URL = `https://api.mixpanel.com/import?strict=1&project_id=${projectId}`;
+const MIXPANEL_BASIC_AUTH = 'Basic dHJ1Y25ndXllbi4wODQ0MDgubXAtc2VydmljZS1hY2NvdW50OndLeVBTOW1rQ2pNbHNYR2dBR3d4TWxhMmlkNHlZdWNx';
+
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -19,28 +22,31 @@ app.post('/appsflyer/install', async (req, res) => {
       return res.status(400).json({ error: 'Missing uid' });
     }
 
-    // Build Mixpanel "Install" event
-    const installEvent = {
-      event: 'Install',
-      properties: {
-        token: MIXPANEL_TOKEN,
-        distinct_id: uid,        // Use Adjust uid
-        time: Math.floor(Date.now() / 1000),
-        source: 'AppsFlyer',
-        campaign,
-        network,
-        tracker_name,
-        tracker_token
-      }
-    };
-
     // Send to Mixpanel
-    const payload = Buffer.from(JSON.stringify([installEvent])).toString('base64');
+    const payload = [
+      {
+        event: 'Install',
+        properties: {
+          distinct_id: afid,
+          time: Math.floor(Date.now() / 1000),
+          source: 'AppsFlyer',
+          campaign,
+          network,
+          tracker_name,
+          tracker_token,
+          $insert_id: `install_${afid}_${Date.now()}` // prevent duplication
+        }
+      }
+    ];
 
-    await fetch('https://api.mixpanel.com/track', {
+    await fetch(MIXPANEL_IMPORT_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${payload}`
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': MIXPANEL_BASIC_AUTH
+      },
+      body: JSON.stringify(payload)
     });
 
     res.sendStatus(200);
