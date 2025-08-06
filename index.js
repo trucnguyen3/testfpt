@@ -82,6 +82,11 @@ app.post('/alias', async (req, res) => {
   }
 });
 
+app.use(express.static('public'));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.listen(PORT, () => {
   console.log(`✅ Server listening at http://localhost:${PORT}`);
 });
