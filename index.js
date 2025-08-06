@@ -39,7 +39,7 @@ app.post('/appsflyer/install', async (req, res) => {
       }
     ];
 
-    await fetch(MIXPANEL_IMPORT_API_URL, {
+    const response_data = await fetch(MIXPANEL_IMPORT_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,7 +49,12 @@ app.post('/appsflyer/install', async (req, res) => {
       body: JSON.stringify(payload)
     });
 
-    res.sendStatus(200);
+    if (!response_data.ok) {
+      const text = await response_data.text();
+      console.error('Mixpanel import failed:', response_data.status, text);
+    } else {
+      console.log('Alias event imported to Mixpanel');
+    }
   } catch (err) {
     console.error('Error processing install:', err);
     res.sendStatus(500);
@@ -70,19 +75,32 @@ app.post('/alias', async (req, res) => {
       properties: {
         token: MIXPANEL_TOKEN,
         distinct_id: uid,
-        alias: customer_id
-      }
+        alias: customer_id,
+        time: Math.floor(Date.now() / 1000), // REQUIRED for /import
+      },
     };
 
+    // Encode to base64
     const payload = Buffer.from(JSON.stringify([aliasEvent])).toString('base64');
 
-    await fetch('https://api.mixpanel.com/track', {
+    // Basic Auth header: username is your API key, password is empty
+    const authHeader = Buffer.from(`${MIXPANEL_API_KEY}:`).toString('base64');
+
+    const response_data = await fetch(`https://api.mixpanel.com/import?strict=1&project_id=${MIXPANEL_PROJECT_ID}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${payload}`
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${authHeader}`,
+      },
+      body: `data=${payload}`,
     });
 
-    res.sendStatus(200);
+    if (!response_data.ok) {
+      const text = await response_data.text();
+      console.error('Mixpanel import failed:', response_data.status, text);
+    } else {
+      console.log('Alias event imported to Mixpanel');
+    }
   } catch (err) {
     console.error('Error aliasing user:', err);
     res.sendStatus(500);
@@ -90,7 +108,7 @@ app.post('/alias', async (req, res) => {
 });
 
 app.use(express.static('public'));
-app.get('*', (req, res) => {
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
