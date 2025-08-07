@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const fetch = require('node-fetch');
+const fetch = require('node-fetch').default;
 const path = require("path");
 
 const app = express();
@@ -57,7 +57,8 @@ app.post('/appsflyer/install', async (req, res) => {
       const text = await response_data.text();
       console.error('Mixpanel import failed:', response_data.status, text);
     } else {
-      console.log('Alias event imported to Mixpanel');
+      console.log('Install imported to Mixpanel successful');
+      res.sendStatus(200);
     }
   } catch (err) {
     console.error('Error processing install:', err);
@@ -105,7 +106,8 @@ app.post('/alias', async (req, res) => {
       const text = await response_data.text();
       console.error('Mixpanel import failed:', response_data.status, text);
     } else {
-      console.log('Alias event imported to Mixpanel');
+      console.log('Alias imported to Mixpanel successful');
+      res.sendStatus(200);
     }
   } catch (err) {
     console.error('Error aliasing user:', err);
