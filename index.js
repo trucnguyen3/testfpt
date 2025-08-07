@@ -39,6 +39,8 @@ app.post('/appsflyer/install', async (req, res) => {
       }
     ];
 
+    console.log("AKA Anonymous data: ", payload)
+
     const response_data = await fetch(MIXPANEL_IMPORT_API_URL, {
       method: 'POST',
       headers: {
@@ -79,6 +81,8 @@ app.post('/alias', async (req, res) => {
         time: Math.floor(Date.now() / 1000), // REQUIRED for /import
       },
     };
+
+    console.log("AKA Alias data: ", aliasEvent)
 
     // Encode to base64
     const payload = Buffer.from(JSON.stringify([aliasEvent])).toString('base64');
