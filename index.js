@@ -5,9 +5,10 @@ const path = require("path");
 
 const app = express();
 const PORT = 3005;
-const projectId = '3811784';
+const projectId = '3826704';
 const MIXPANEL_IMPORT_API_URL = `https://api.mixpanel.com/import?strict=1&project_id=${projectId}`;
 const MIXPANEL_BASIC_AUTH = 'Basic dHJ1Y25ndXllbi4wODQ0MDgubXAtc2VydmljZS1hY2NvdW50OndLeVBTOW1rQ2pNbHNYR2dBR3d4TWxhMmlkNHlZdWNx';
+const MIXPANEL_TOKEN = "d5c71d31bc37758fc8d70beecbed2365";
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -58,7 +59,7 @@ app.post('/appsflyer/install', async (req, res) => {
       console.error('Mixpanel import failed:', response_data.status, text);
     } else {
       console.log('Install imported to Mixpanel successful');
-      res.sendStatus(200);
+      res.status(200).json({ status: 'ok' });
     }
   } catch (err) {
     console.error('Error processing install:', err);
@@ -90,14 +91,11 @@ app.post('/alias', async (req, res) => {
     // Encode to base64
     const payload = Buffer.from(JSON.stringify([aliasEvent])).toString('base64');
 
-    // Basic Auth header: username is your API key, password is empty
-    const authHeader = Buffer.from(`${MIXPANEL_API_KEY}:`).toString('base64');
-
-    const response_data = await fetch(`https://api.mixpanel.com/import?strict=1&project_id=${MIXPANEL_PROJECT_ID}`, {
+    const response_data = await fetch(MIXPANEL_IMPORT_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${authHeader}`,
+        'Authorization': MIXPANEL_BASIC_AUTH,
       },
       body: `data=${payload}`,
     });
@@ -107,7 +105,7 @@ app.post('/alias', async (req, res) => {
       console.error('Mixpanel import failed:', response_data.status, text);
     } else {
       console.log('Alias imported to Mixpanel successful');
-      res.sendStatus(200);
+      res.status(200).json({ status: 'ok' });
     }
   } catch (err) {
     console.error('Error aliasing user:', err);
