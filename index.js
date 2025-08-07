@@ -27,14 +27,14 @@ app.post('/appsflyer/install', async (req, res) => {
       {
         event: 'Install',
         properties: {
-          distinct_id: afid,
+          distinct_id: uid,
           time: Math.floor(Date.now() / 1000),
           source: 'AppsFlyer',
           campaign,
           network,
           tracker_name,
           tracker_token,
-          $insert_id: `install_${afid}_${Date.now()}` // prevent duplication
+          $insert_id: `install_${uid}_${Date.now()}` // prevent duplication
         }
       }
     ];
