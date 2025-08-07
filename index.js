@@ -18,6 +18,8 @@ app.post('/appsflyer/install', async (req, res) => {
   try {
     const { uid, campaign, network, tracker_name, tracker_token } = req.body;
 
+    console.log("Data: ", uid, campaign, network, tracker_name, tracker_token)
+
     if (!uid) {
       return res.status(400).json({ error: 'Missing uid' });
     }
