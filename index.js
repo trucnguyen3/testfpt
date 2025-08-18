@@ -68,7 +68,7 @@ app.post('/appsflyer/install', async (req, res) => {
 });
 
 // 2. Optional: Alias uid to customer_id on login
-app.post('/alias', async (req, res) => {
+app.post('/mixpanel/alias', async (req, res) => {
   try {
     const { uid, customer_id } = req.body;
 
@@ -109,6 +109,46 @@ app.post('/alias', async (req, res) => {
     }
   } catch (err) {
     console.error('Error aliasing user:', err);
+    res.sendStatus(500);
+  }
+});
+
+app.post('/mixpanel/create-identity', async (req, res) => {
+  try {
+    const { identified_id, distinct_id } = req.body;
+
+    if (!identified_id || !distinct_id) {
+      return res.status(400).json({ error: 'Missing identified_id or distinct_id' });
+    }
+
+    const identityPayload = {
+      $token: MIXPANEL_TOKEN,
+      $distinct_id: distinct_id,    // the new, "canonical" id (e.g. user_id)
+      $identified_id: identified_id // the old/anon id (e.g. device_id)
+    };
+
+    console.log("AKA Identity API data: ", identityPayload);
+
+    const payload = Buffer.from(JSON.stringify([identityPayload])).toString('base64');
+
+    const response_data = await fetch("https://api.mixpanel.com/track#identity", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `data=${payload}`
+    });
+
+    if (!response_data.ok) {
+      const text = await response_data.text();
+      console.error('Mixpanel identity failed:', response_data.status, text);
+      return res.status(response_data.status).json({ error: text });
+    }
+
+    console.log('Identity created/merged in Mixpanel successful');
+    res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.error('Error creating identity:', err);
     res.sendStatus(500);
   }
 });
