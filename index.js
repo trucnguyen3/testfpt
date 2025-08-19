@@ -203,7 +203,7 @@ app.post('/mixpanel/profile', async (req, res) => {
     // Build payload for Mixpanel profile set
     const profile_payload = [
       {
-        $token: MIXPANEL_PROJECT_TOKEN, // from your project
+        $token: MIXPANEL_TOKEN, // from your project
         $distinct_id: uid,
         $set: {
           $campaign: campaign
