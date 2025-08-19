@@ -119,8 +119,8 @@ app.post('/mixpanel/create-identity', async (req, res) => {
     // distinct_id = YOUR_CHOSEN_USER_ID (e.g. username)
     // identified_id = ORIGINAL_ANON_ID (e.g. CleverTapID)
 
-    if (!anon_id || username) {
-      return res.status(400).json({ error: 'Missing anon_id or username' });
+    if (!anon_id) {
+      return res.status(400).json({ error: 'Missing anon_id' });
     }
 
     const payload = {
