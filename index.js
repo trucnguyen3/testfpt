@@ -156,6 +156,84 @@ app.post('/mixpanel/create-identity', async (req, res) => {
   }
 });
 
+app.post('/mixpanel/profile', async (req, res) => {
+  try {
+    const { uid, campaign } = req.body;
+
+    console.log("Data: ", uid, campaign)
+
+    if (!uid) {
+      return res.status(400).json({ error: 'Missing uid' });
+    }
+
+    // Send to Mixpanel
+    const event_payload = [
+      {
+        event: 'Profile Updated',
+        properties: {
+          distinct_id: uid,
+          time: Math.floor(Date.now() / 1000),
+          source: 'Mixpanel',
+          campaign: campaign,
+          $insert_id: `install_${uid}_${Date.now()}` // prevent duplication
+        }
+      }
+    ];
+
+    console.log("AKA Anonymous data: ", event_payload)
+
+    const event_response_data = await fetch(MIXPANEL_IMPORT_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': MIXPANEL_BASIC_AUTH
+      },
+      body: JSON.stringify(event_payload)
+    });
+
+    if (!event_response_data.ok) {
+      const text = await event_response_data.text();
+      console.error('Mixpanel import failed:', event_response_data.status, text);
+    } else {
+      console.log('Install imported to Mixpanel successful');
+      res.status(200).json({ status: 'ok' });
+    }
+
+    // Build payload for Mixpanel profile set
+    const profile_payload = [
+      {
+        $token: MIXPANEL_PROJECT_TOKEN, // from your project
+        $distinct_id: uid,
+        $set: {
+          $campaign: campaign
+        }
+      }
+    ];
+
+    const profile_response_data = await fetch("https://api.mixpanel.com/engage?ip=0", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(profile_payload)
+    });
+
+    if (!profile_response_data.ok) {
+      const text = await profile_response_data.text();
+      console.error('Mixpanel profile update failed:', profile_response_data.status, text);
+      return res.status(profile_response_data.status).json({ error: text });
+    }
+
+    console.log('Profile updated in Mixpanel successfully');
+    res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.sendStatus(500);
+  }
+});
+
 
 app.use(express.static('public'));
 app.get('/', (req, res) => {
