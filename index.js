@@ -115,43 +115,47 @@ app.post('/mixpanel/alias', async (req, res) => {
 
 app.post('/mixpanel/create-identity', async (req, res) => {
   try {
-    const { identified_id, distinct_id } = req.body;
+    const { distinct_id } = req.body; 
+    // distinct_id = YOUR_CHOSEN_USER_ID (e.g. username)
+    // identified_id = ORIGINAL_ANON_ID (e.g. CleverTapID)
 
-    if (!identified_id || !distinct_id) {
-      return res.status(400).json({ error: 'Missing identified_id or distinct_id' });
+    if (!distinct_id ) {
+      return res.status(400).json({ error: 'Missing distinct_id' });
     }
 
-    const identityPayload = {
-      $token: MIXPANEL_TOKEN,
-      $distinct_id: distinct_id,    // the new, "canonical" id (e.g. user_id)
-      $identified_id: identified_id // the old/anon id (e.g. device_id)
+    const payload = {
+      event: "$identify",
+      properties: {
+        $identified_id: distinct_id, // the new permanent user id
+        $anon_id: null,     // the old anon/device id
+        token: MIXPANEL_TOKEN
+      }
     };
 
-    console.log("AKA Identity API data: ", identityPayload);
-
-    const payload = Buffer.from(JSON.stringify([identityPayload])).toString('base64');
-
-    const response_data = await fetch("https://api.mixpanel.com/track#identity", {
-      method: 'POST',
+    const response = await fetch("https://api.mixpanel.com/track#create-identity", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        "accept": "text/plain",
+        "content-type": "application/x-www-form-urlencoded"
       },
-      body: `data=${payload}`
+      body: `data=${JSON.stringify(payload)}`
     });
 
-    if (!response_data.ok) {
-      const text = await response_data.text();
-      console.error('Mixpanel identity failed:', response_data.status, text);
-      return res.status(response_data.status).json({ error: text });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("❌ Mixpanel identity failed:", response.status, text);
+      return res.status(response.status).json({ error: text });
     }
 
-    console.log('Identity created/merged in Mixpanel successful');
-    res.status(200).json({ status: 'ok' });
+    console.log("✅ Identity created/merged in Mixpanel successful");
+    res.status(200).json({ status: "ok" });
+
   } catch (err) {
-    console.error('Error creating identity:', err);
+    console.error("❌ Error creating identity:", err);
     res.sendStatus(500);
   }
 });
+
 
 app.use(express.static('public'));
 app.get('/', (req, res) => {
