@@ -115,7 +115,7 @@ app.post('/mixpanel/alias', async (req, res) => {
 
 app.post('/mixpanel/create-identity', async (req, res) => {
   try {
-    const { distinct_id } = req.body; 
+    const { anon_id, username } = req.body; 
     // distinct_id = YOUR_CHOSEN_USER_ID (e.g. username)
     // identified_id = ORIGINAL_ANON_ID (e.g. CleverTapID)
 
@@ -126,8 +126,8 @@ app.post('/mixpanel/create-identity', async (req, res) => {
     const payload = {
       event: "$identify",
       properties: {
-        $identified_id: distinct_id, // the new permanent user id
-        $anon_id: null,     // the old anon/device id
+        $identified_id: username, // the new permanent user id
+        $anon_id: anon_id,     // the old anon/device id
         token: MIXPANEL_TOKEN
       }
     };
