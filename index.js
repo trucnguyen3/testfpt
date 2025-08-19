@@ -160,13 +160,13 @@ app.post('/mixpanel/profile', async (req, res) => {
   try {
     const { uid, campaign } = req.body;
 
-    console.log("Data: ", uid, campaign)
+    console.log("Data: ", uid, campaign);
 
     if (!uid) {
       return res.status(400).json({ error: 'Missing uid' });
     }
 
-    // Send to Mixpanel
+    // Event payload
     const event_payload = [
       {
         event: 'Profile Updated',
@@ -174,13 +174,13 @@ app.post('/mixpanel/profile', async (req, res) => {
           distinct_id: uid,
           time: Math.floor(Date.now() / 1000),
           source: 'Mixpanel',
-          campaign: campaign,
-          $insert_id: `install_${uid}_${Date.now()}` // prevent duplication
+          campaign,
+          $insert_id: `install_${uid}_${Date.now()}`
         }
       }
     ];
 
-    console.log("AKA Anonymous data: ", event_payload)
+    console.log("Event payload: ", event_payload);
 
     const event_response_data = await fetch(MIXPANEL_IMPORT_API_URL, {
       method: 'POST',
@@ -195,15 +195,15 @@ app.post('/mixpanel/profile', async (req, res) => {
     if (!event_response_data.ok) {
       const text = await event_response_data.text();
       console.error('Mixpanel import failed:', event_response_data.status, text);
-    } else {
-      console.log('Install imported to Mixpanel successful');
-      res.status(200).json({ status: 'ok' });
+      return res.status(event_response_data.status).json({ error: text });
     }
 
-    // Build payload for Mixpanel profile set
+    console.log('Event imported to Mixpanel successful');
+
+    // Profile payload
     const profile_payload = [
       {
-        $token: MIXPANEL_TOKEN, // from your project
+        $token: MIXPANEL_TOKEN,
         $distinct_id: uid,
         $set: {
           $campaign: campaign
@@ -227,12 +227,16 @@ app.post('/mixpanel/profile', async (req, res) => {
     }
 
     console.log('Profile updated in Mixpanel successfully');
+
+    // ✅ Send response only once after both succeed
     res.status(200).json({ status: 'ok' });
+
   } catch (err) {
     console.error('Error updating profile:', err);
     res.sendStatus(500);
   }
 });
+
 
 
 app.use(express.static('public'));
