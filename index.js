@@ -251,7 +251,7 @@ app.post("/mixpanel/event", async (req, res) => {
         properties: {
           distinct_id: anon_id,
           time: Math.floor(Date.now() / 1000), // current timestamp in seconds
-          $insert_id: `${eventName}_${Date.now()}`,
+          $insert_id: `custom_event_${Date.now()}`,
           ...properties,
         },
       },
