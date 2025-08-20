@@ -268,7 +268,7 @@ app.post("/mixpanel/event", async (req, res) => {
     );
 
     const result = await response.text();
-    console.log("Mixpanel response:", result);
+    console.log("Mixpanelv event response:", result);
 
     res.json({ status: "ok", mixpanel: result });
   } catch (error) {
