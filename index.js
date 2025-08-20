@@ -237,6 +237,46 @@ app.post('/mixpanel/profile', async (req, res) => {
   }
 });
 
+app.post("/mixpanel/event", async (req, res) => {
+  try {
+    const { eventName, anon_id, properties = {} } = req.body;
+
+    if (!eventName || !distinctId) {
+      return res.status(400).json({ error: "Missing eventName or distinctId" });
+    }
+
+    const payload = [
+      {
+        event: eventName,
+        properties: {
+          distinct_id: anon_id,
+          time: Math.floor(Date.now() / 1000), // current timestamp in seconds
+          $insert_id: `${eventName}_${anon_id}_${Date.now()}`,
+          ...properties,
+        },
+      },
+    ];
+
+    const response = await fetch(MIXPANEL_IMPORT_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": MIXPANEL_BASIC_AUTH,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const result = await response.text();
+    console.log("Mixpanel response:", result);
+
+    res.json({ status: "ok", mixpanel: result });
+  } catch (error) {
+    console.error("Error sending event:", error);
+    res.status(500).json({ error: "Failed to send event" });
+  }
+});
+
 
 
 app.use(express.static('public'));
