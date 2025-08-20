@@ -241,8 +241,8 @@ app.post("/mixpanel/event", async (req, res) => {
   try {
     const { eventName, anon_id, properties = {} } = req.body;
 
-    if (!eventName || !distinctId) {
-      return res.status(400).json({ error: "Missing eventName or distinctId" });
+    if (!eventName || !anon_id) {
+      return res.status(400).json({ error: "Missing eventName or anon_id" });
     }
 
     const payload = [
